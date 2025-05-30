@@ -7,111 +7,96 @@ local quoteLabel = gui:WaitForChild("quote")
 local sideLeft = gui:WaitForChild("side left")
 local sideRight = gui:WaitForChild("side right")
 
--- Get dev icons (named 1 to 6)
+-- Get dev icons (named "1" to "6")
 local devIcons = {}
 for i = 1, 6 do
-    table.insert(devIcons, devIconsFolder:FindFirstChild(tostring(i)))
+	table.insert(devIcons, devIconsFolder:FindFirstChild(tostring(i)))
 end
 
--- Sort dev tags
+-- Sort dev tags (optional sort by name)
 local devTags = devTagsFolder:GetChildren()
 table.sort(devTags, function(a, b) return a.Name < b.Name end)
 
 -- Quotes
 local quotes = {
-    "Great things take time.",
-    "Code, test, repeat.",
-    "Created with passion.",
-    "From bugs to brilliance.",
-    "Stay inspired.",
-    "Built by dreamers.",
-    "Powered by teamwork."
+	"Great things take time.",
+	"Code, test, repeat.",
+	"Created with passion.",
+	"From bugs to brilliance.",
+	"Stay inspired.",
+	"Built by dreamers.",
+	"Powered by teamwork."
 }
 
--- Short delay before anything starts
-task.wait(0.5)
-
 -- ========== SETUP ==========
+-- Prevent snap: configure BEFORE first render frame
+-- Set positions and transparency before screen shows
 
--- Store final positions
 local finalPositions = {}
-
--- Get screen size (to calculate offscreen)
-local viewportSize = gui.AbsoluteSize
-
 for i, icon in ipairs(devIcons) do
-    icon.Visible = true
-    icon.ImageTransparency = 0
+	icon.Visible = true
+	icon.ImageTransparency = 1
 
-    -- Save their final position
-    finalPositions[i] = icon.Position
+	-- Save final position (already placed in Studio)
+	finalPositions[i] = icon.Position
 
-    -- Move offscreen vertically (top or bottom)
-    local offsetY
-    if i % 2 == 1 then
-        offsetY = -icon.AbsoluteSize.Y - 50 -- slide from top
-    else
-        offsetY = viewportSize.Y + icon.AbsoluteSize.Y + 50 -- slide from bottom
-    end
-
-    -- Apply new starting Position offscreen
-    icon.Position = UDim2.new(
-        icon.Position.X.Scale,
-        icon.Position.X.Offset,
-        0,
-        offsetY
-    )
+	-- Slide from top (odd) or bottom (even)
+	local slideFromY = (i % 2 == 1) and -0.3 or 1.3
+	icon.Position = UDim2.new(finalPositions[i].X.Scale, finalPositions[i].X.Offset, slideFromY, 0)
 end
 
--- Hide dev tags
+-- Tags
 for _, tag in ipairs(devTags) do
-    tag.Visible = true
-    tag.TextTransparency = 1
+	tag.Visible = true
+	tag.TextTransparency = 1
 end
 
--- Setup quote
+-- Quote
 quoteLabel.Visible = true
 quoteLabel.TextTransparency = 1
 quoteLabel.Text = quotes[math.random(1, #quotes)]
 
--- Ensure split screen frames are already rotated & visible in Studio
-
 -- ========== TIMELINE ==========
+
+task.wait(0.5) -- Small pause before starting
 
 local slideInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad)
 
--- 1. Slide in icons
+-- 1. Slide in dev icons
 for i, icon in ipairs(devIcons) do
-    TweenService:Create(icon, slideInfo, {Position = finalPositions[i]}):Play()
-    task.wait(0.2)
+	TweenService:Create(icon, slideInfo, {
+		Position = finalPositions[i],
+		ImageTransparency = 0
+	}):Play()
+	task.wait(0.2)
 end
 
--- 2. Fade in dev tags
+-- 2. Fade in name tags
 for _, tag in ipairs(devTags) do
-    TweenService:Create(tag, fadeInfo, {TextTransparency = 0}):Play()
+	TweenService:Create(tag, fadeInfo, {TextTransparency = 0}):Play()
 end
 
 -- 3. Show quote
 TweenService:Create(quoteLabel, fadeInfo, {TextTransparency = 0}):Play()
 
--- 4. Wait
+-- 4. Wait before split
 task.wait(2)
 
--- 5. Fade out icons and tags
+-- 5. Fade out dev icons and text
 for _, icon in ipairs(devIcons) do
-    TweenService:Create(icon, fadeInfo, {ImageTransparency = 1}):Play()
+	TweenService:Create(icon, fadeInfo, {ImageTransparency = 1}):Play()
 end
 for _, tag in ipairs(devTags) do
-    TweenService:Create(tag, fadeInfo, {TextTransparency = 1}):Play()
+	TweenService:Create(tag, fadeInfo, {TextTransparency = 1}):Play()
 end
 TweenService:Create(quoteLabel, fadeInfo, {TextTransparency = 1}):Play()
 
--- 6. Diagonal split animation
+-- 6. Diagonal split animation (assumes frames are already rotated)
 TweenService:Create(sideLeft, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
-    Position = sideLeft.Position + UDim2.new(-1, 0, 1, 0)
+	Position = sideLeft.Position + UDim2.new(-1, 0, 1, 0)
 }):Play()
 
 TweenService:Create(sideRight, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
-    Position = sideRight.Position + UDim2.new(1, 0, -1, 0)
+	Position = sideRight.Position + UDim2.new(1, 0, -1, 0)
 }):Play()
